@@ -1,0 +1,22 @@
+[
+ {
+  "directory": "/Users/louis1001/Documents/projects/C/webser",
+  "arguments": [
+   "clang",
+   "-Wimplicit-fallthrough",
+   "-pedantic-errors",
+   "-Werror",
+   "-Wall",
+   "-Wextra",
+   "-I./include/",
+   "-o",
+   "build/webser",
+   "src/main.c",
+   "src/request.c",
+   "src/response.c",
+   "src/server.c",
+   "src/string_stuff.c"
+  ],
+  "file": "src/string_stuff.c"
+ }
+]
