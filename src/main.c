@@ -1,3 +1,4 @@
+#include "html_builder.h"
 #include "server.h"
 #include "string_stuff.h"
 #include "request.h"

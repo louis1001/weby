@@ -18,7 +18,7 @@
 #define true 1
 #define false 0
 
-#define ASSERT(cond, msg) do { if (!cond) { printf("%s:%d %s\n", __FILE__, __LINE__, msg); exit(1); } } while(0)
+#define ASSERT(cond, msg) do { if (!(cond)) { printf("%s:%d %s\n", __FILE__, __LINE__, msg); exit(1); } } while(0)
 #define TODO() ASSERT(false, "TODO")
 
 #define loop while(1)
