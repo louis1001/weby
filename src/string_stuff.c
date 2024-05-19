@@ -73,6 +73,14 @@ void stringview_split(StringView *sv, char c, StringView *lhs, StringView *rhs) 
 
 void stringview_split_str(StringView *sv, char *separator, StringView *lhs, StringView *rhs) {
     usize sep_len = strlen(separator);
+
+    if (sv->length == 0) {
+        lhs->ptr = nullptr;
+        lhs->length = 0;
+        rhs->ptr = nullptr;
+        rhs->length = 0;
+        return;
+    }
     usize found_position = 0;
     bool did_find = false;
 
@@ -96,6 +104,13 @@ void stringview_split_str(StringView *sv, char *separator, StringView *lhs, Stri
         rhs->ptr = sv->ptr + sv->length;
         rhs->length = 0;
     }
+}
+
+bool stringview_compare_str(StringView *sv, const char *str) {
+    usize str_len = strlen(str);
+    if (sv->length != str_len) { return false; }
+
+    return strncmp(sv->ptr, str, sv->length) == 0;
 }
 
 void stringview_triml(StringView *sv, usize count) {
@@ -131,11 +146,10 @@ void string_print(String *sv) {
 }
 
 bool string_compare_str(String *sb, const char* str) {
-    (void)sb;
-    (void)str;
-    TODO();
+    usize str_len = strlen(str);
+    if (sb->length != str_len) { return false; }
 
-    return false;
+    return strncmp(sb->ptr, str, sb->length) == 0;
 }
 
 int string_init(String *sb) {

@@ -27,4 +27,6 @@ int server_send_response(Server*, Request*, Response*);
 int server_init(Server *server, u32 addr, u16 port);
 int server_start(Server *server);
 
+char *mime_type_for(const char *path);
+
 #endif

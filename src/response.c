@@ -104,6 +104,10 @@ void status_to_str(u16 status_code, String *text) {
             string_append(text, "OK");
             break;
         }
+        case 302: {
+            string_append(text, "Found");
+            break;
+        }
         case 404: {
             string_append(text, "Not Found");
             break;

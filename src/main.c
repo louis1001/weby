@@ -15,18 +15,5 @@ int main(void) {
     server_init(&server, 0x0, PORT);
 
     server_start(&server);
-
-    // Response r = response_create();
-
-    // header_list_append(&r.header_list, header_create("Content-Type", "application/json"));
-    // header_list_append(&r.header_list, header_create("Access-Control-Allow-Origin", "*"));
-
-    // String content = response_to_string(&r);
-    // response_destroy(&r);
-
-    // string_print(&content);
-
-    // string_destroy(&content);
-
     return 0;
 }

@@ -37,6 +37,20 @@ int server_init(Server *server, u32 addr, u16 port) {
     return 0;
 }
 
+char *mime_type_for(const char *path) {
+    StringView sv = stringview_create(path);
+    SV_SPLIT(&sv, '.', route, ext);
+
+    if (stringview_compare_str(&ext, "html")) {
+        return "text/html";
+    } else if (stringview_compare_str(&ext, "png")) {
+        return "image/x-png";
+    } else if (stringview_compare_str(&ext, "css")) {
+        return "text/css";
+    }
+    return "unknown";
+}
+
 int server_handle_request(Server *server, Request *request, Response *response) {
     (void)server;
     (void)request;
@@ -44,15 +58,54 @@ int server_handle_request(Server *server, Request *request, Response *response) 
     response->version = HTTP1_0;
     response->status_code = 200;
 
-    FILE *file = fopen("static/test.html", "r");
-    if (file == NULL) {
-        response->status_code = 404;
-        response->body.type = STRING_RESPONSE;
-        response->body.value.string = string_new("404 Not Found");
+    StringView raw_path_sv = string_make_view(&request->path);
+    printf("Raw path: `");
+    stringview_print(&raw_path_sv);
+    printf("`c\n");
+    // Remove the leading / (will always come)
+    SV_SPLIT_STR(&raw_path_sv, "/", empty_sv, path_sv);
+
+    SV_SPLIT_STR(&path_sv, "/", root, rest);
+
+    printf("Path is: root(");
+    stringview_print(&root);
+    printf(")\nrest(");
+    stringview_print(&rest);
+    printf(")\n");
+
+    if (stringview_compare_str(&root, "static")) {
+        String full_path = string_new("assets/");
+        string_append_sv(&full_path, &rest);
+
+        FILE *file = fopen(full_path.ptr, "r");
+        if (file == NULL) {
+            debugf("File `%s` was not found", full_path.ptr);
+            response->status_code = 404;
+            response->body.type = STRING_RESPONSE;
+            response->body.value.string = string_new("404 Not Found");
+        } else {
+            header_list_append(&response->header_list, header_create("Content-Type", mime_type_for(full_path.ptr)));
+            response->body.type = FILE_RESPONSE;
+            response->body.value.file = file;
+        }
+        return 0;
+    } else if (root.length == 0) {
+        FILE *file = fopen("static/test.html", "r");
+        if (file == NULL) {
+            debug("File static/test.html was not found");
+            response->status_code = 404;
+            response->body.type = STRING_RESPONSE;
+            response->body.value.string = string_new("404 Not Found");
+        } else {
+            header_list_append(&response->header_list, header_create("Content-Type", "text/html; charset=utf-8"));
+            response->body.type = FILE_RESPONSE;
+            response->body.value.file = file;
+        }
     } else {
-        header_list_append(&response->header_list, header_create("Content-Type", "text/html; charset=utf-8"));
-        response->body.type = FILE_RESPONSE;
-        response->body.value.file = file;
+        response->status_code = 302;
+        response->body.type = STRING_RESPONSE;
+        header_list_append(&response->header_list, header_create("Location", "/"));
+        response->body.value.string = string_new("Please follow <a href='/'>this link</a>");
     }
 
     return 0;
