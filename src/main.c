@@ -13,16 +13,6 @@ const int PORT = 8001;
 
 const Server server = {0};
 
-void index_route(Server *server, Request *req, Response *res) {
-    (void) server;
-    (void) req;
-
-    res->version = HTTP1_0;
-    res->status_code = 200;
-    res->body.type = STRING_RESPONSE;
-    res->body.value.string = string_new("Working.");
-}
-
 int main(void) {
     Server server = {0};
 
