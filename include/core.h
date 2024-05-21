@@ -28,8 +28,6 @@
 
 #define FAILURE_STATUS -1;
 
-#define STRINGIFY(x) #x
-
 void show_error(const char*, errno_t);
 #endif
 

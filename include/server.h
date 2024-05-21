@@ -26,7 +26,8 @@ int server_send_file(Server*, Request*, FILE*);
 int server_send_response(Server*, Request*, Response*);
 int server_init(Server *server, u32 addr, u16 port);
 int server_start(Server *server);
+void server_destroy(Server*);
 
-char *mime_type_for(const char *path);
+char *mime_type_for_file(const char *path);
 
 #endif

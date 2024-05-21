@@ -10,7 +10,6 @@
 \
 int element_lower##_list_init(element##List*);\
 void element_lower##_list_destroy(element##List*);\
-void element_lower##_list_element_destroy(element* element);\
 int element_lower##_list_append(element##List*, element);\
 int element_lower##_list_grow_to_length(element##List*, usize)
 
@@ -28,7 +27,7 @@ int element_lower##_list_grow_to_length(element##List*, usize)
 void element_lower##_list_destroy(element##List* list) {\
     for (usize i = 0; i < list->length; i++) {\
         element el = list->data[i];\
-        element_lower##_list_element_destroy(&el);\
+        element_lower##_destroy(&el);\
     }\
     free(list->data);\
     list->length = list->capacity = 0;\

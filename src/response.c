@@ -23,10 +23,6 @@ void header_destroy(Header *header) {
     string_destroy(&header->name);
 }
 
-void header_list_element_destroy(Header *header) {
-    header_destroy(header);
-}
-
 Response response_create(void) {
     Response r;
     r.version = HTTP1_0;
