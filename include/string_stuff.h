@@ -22,6 +22,8 @@ char stringview_char_at(StringView *sv, usize pos);
 void stringview_split(StringView *sv, char, StringView *lhs, StringView *rhs);
 void stringview_split_str(StringView *, char *, StringView *lhs, StringView *rhs);
 bool stringview_compare_str(StringView *, const char*);
+bool stringview_compare_sv(StringView *, StringView *);
+bool stringview_has_prefix(StringView *, StringView *);
 
 #define SV_SPLIT(sv, separator, lhs_name, rhs_name) StringView lhs_name = {0};\
     StringView rhs_name = {0};\

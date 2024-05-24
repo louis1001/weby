@@ -45,9 +45,9 @@ int element_lower##_list_append(element##List* list, element item) {\
 }\
 int element_lower##_list_grow_to_length(element##List* list, usize new_length) {\
 if (new_length < list->capacity) return 0;\
-\
-    usize new_capacity = list->capacity;\
+    usize new_capacity = max_value(1, list->capacity);\
     do {\
+        printf("Growing capacity %zu, because it can't hold %zu items\n", new_capacity, new_length);\
         new_capacity = new_capacity * 2;\
     } while(new_capacity <= new_length);\
 \

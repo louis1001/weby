@@ -113,6 +113,18 @@ bool stringview_compare_str(StringView *sv, const char *str) {
     return strncmp(sv->ptr, str, sv->length) == 0;
 }
 
+bool stringview_compare_sv(StringView *sv1, StringView *sv2) {
+    if (sv1->length != sv2->length) { return false; }
+
+    return strncmp(sv1->ptr, sv2->ptr, sv1->length) == 0;
+}
+
+bool stringview_has_prefix(StringView *sv, StringView *prefix) {
+    if (sv->length < prefix->length) { return false; }
+
+    return strncmp(sv->ptr, prefix->ptr, prefix->length) == 0;
+}
+
 void stringview_triml(StringView *sv, usize count) {
     usize chars_removed = count;
     if (sv->length < count) {

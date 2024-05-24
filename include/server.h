@@ -5,6 +5,7 @@
 #include "core.h"
 #include "request.h"
 #include "response.h"
+#include "router.h"
 
 typedef struct sockaddr_in socket_addr;
 
@@ -19,14 +20,15 @@ typedef struct {
     int socket_fd;
     socket_addr addr;
     ServerStatus status;
+    Router router;
 } Server;
 
-int server_handle_request(Server*, Request*, Response*);
 int server_send_file(Server*, Request*, FILE*);
 int server_send_response(Server*, Request*, Response*);
 int server_init(Server *server, u32 addr, u16 port);
 int server_start(Server *server);
 void server_destroy(Server*);
+void server_set_router(Server *, Router);
 
 char *mime_type_for_file(const char *path);
 
