@@ -16,11 +16,11 @@ typedef struct {
 
 StringView stringview_create(const char *);
 StringView stringview_create_with_length(const char *, usize);
-void stringview_print(StringView *sv);
-void stringview_debug_print(StringView *sv);
-char stringview_char_at(StringView *sv, usize pos);
-void stringview_split(StringView *sv, char, StringView *lhs, StringView *rhs);
-void stringview_split_str(StringView *, char *, StringView *lhs, StringView *rhs);
+void stringview_print(const StringView *sv);
+void stringview_debug_print(const StringView *sv);
+char stringview_char_at(const StringView *sv, usize pos);
+void stringview_split(const StringView *sv, char, StringView *lhs, StringView *rhs);
+void stringview_split_str(const StringView *, char *, StringView *lhs, StringView *rhs);
 bool stringview_compare_str(StringView *, const char*);
 bool stringview_compare_sv(StringView *, StringView *);
 bool stringview_has_prefix(StringView *, StringView *);

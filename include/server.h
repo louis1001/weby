@@ -30,6 +30,6 @@ int server_start(Server *server);
 void server_destroy(Server*);
 void server_set_router(Server *, Router);
 
-char *mime_type_for_file(const char *path);
+char *mime_type_for_file(const StringView*);
 
 #endif

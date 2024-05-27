@@ -14,51 +14,6 @@ const int PORT = 8001;
 
 const Server server = {0};
 
-int server_handle_request(Server *server, Request *request, Response *response) {
-    (void)server;
-    (void)request;
-
-    response->version = HTTP1_0;
-    response->status_code = 200;
-
-    StringView raw_path_sv = string_make_view(&request->path);
-    // Remove the leading / (will always come)
-    SV_SPLIT_STR(&raw_path_sv, "/", empty_sv, path_sv);
-
-    SV_SPLIT_STR(&path_sv, "/", root, rest);
-
-    printf("Path is:\n  root(");
-    stringview_print(&root);
-    printf(")\n  rest(");
-    stringview_print(&rest);
-    printf(")\n");
-
-    if (stringview_compare_str(&root, "favicon.ico")) {
-        FILE *file = fopen("static/assets/favicon.ico", "r");
-        if (file == NULL) {
-            debug("File `favicon.ico` was not found");
-            response->status_code = 404;
-            response->body.type = STRING_RESPONSE;
-            response->body.value.string = string_new("404 Not Found");
-        } else {
-            header_list_append(&response->header_list, header_create("Content-Type", mime_type_for_file("favicon.ico")));
-            response->body.type = FILE_RESPONSE;
-            response->body.value.file = file;
-        }
-        return 0;
-    } else if (stringview_compare_str(&root, "static")) {
-
-        return 0;
-    } else {
-        response->status_code = 302;
-        response->body.type = STRING_RESPONSE;
-        header_list_append(&response->header_list, header_create("Location", "/"));
-        response->body.value.string = string_new("Please follow <a href='/'>this link</a>");
-    }
-
-    return 0;
-}
-
 void index_route(Request *request, Response *response) {
     (void)request;
 
@@ -95,7 +50,7 @@ void static_assets_route(Request *request, Response *response) {
         response->body.type = STRING_RESPONSE;
         response->body.value.string = string_new("404 Not Found");
     } else {
-        header_list_append(&response->header_list, header_create("Content-Type", mime_type_for_file(full_path.ptr)));
+        header_list_append(&response->header_list, header_create("Content-Type", mime_type_for_file(&rest)));
         response->body.type = FILE_RESPONSE;
         response->body.value.file = file;
         response->status_code = 200;
@@ -111,7 +66,8 @@ void favicon_route(Request *request, Response *response) {
         response->body.type = STRING_RESPONSE;
         response->body.value.string = string_new("404 Not Found");
     } else {
-        header_list_append(&response->header_list, header_create("Content-Type", mime_type_for_file("favicon.ico")));
+        StringView icon_sv = stringview_create("favicon.ico");
+        header_list_append(&response->header_list, header_create("Content-Type", mime_type_for_file(&icon_sv)));
         response->body.type = FILE_RESPONSE;
         response->body.value.file = file;
     }
@@ -133,14 +89,14 @@ int main(void) {
 
     server_init(&server, 0x0, PORT);
 
-    Router router = router_new();
+    // Router router = router_new();
 
-    router_add_route(&router, "/static", &static_assets_route);
-    router_add_exact_route(&router, "/favicon.ico", &favicon_route);
-    router_add_exact_route(&router, "/", &index_route);
-    router_add_route(&router, "/", &not_found_route);
+    // router_add_route(&router, "/static", &static_assets_route);
+    // router_add_exact_route(&router, "/favicon.ico", &favicon_route);
+    // router_add_exact_route(&router, "/", &index_route);
+    // router_add_route(&router, "/", &not_found_route);
 
-    server_set_router(&server, router);
+    // server_set_router(&server, router);
 
     server_start(&server);
 

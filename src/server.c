@@ -1,33 +1,71 @@
 #include <errno.h>
 
-#include "core.h"
-#include "router.h"
-#include "server.h"
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+
+#include "core.h"
+#include "router.h"
+#include "server.h"
 #include "string_stuff.h"
 #include "response.h"
 
 const usize BUFFER_SIZE = 1024;
 
-void serve_static_files(Request *req, Response *response) {
+void default_static_files_route(Request *req, Response *response) {
+    printf("Default file route\n");
     StringView request_path = string_make_view(&req->path);
     String full_path = string_new(".");
+    printf("Got path: %s\n", full_path.ptr);
     string_append_sv(&full_path, &request_path);
 
     FILE *file = fopen(full_path.ptr, "r");
+
     if (file == NULL) {
         debugf("File `%s` was not found", full_path.ptr);
         response->status_code = 404;
         response->body.type = STRING_RESPONSE;
         response->body.value.string = string_new("404 Not Found");
-    } else {
-        header_list_append(&response->header_list, header_create("Content-Type", mime_type_for_file(full_path.ptr)));
-        response->body.type = FILE_RESPONSE;
-        response->body.value.file = file;
+        return;
     }
+
+    int fd = fileno(file);
+    struct stat data;
+    fstat(fd, &data);
+
+    if (S_ISDIR(data.st_mode)) {
+        response->status_code = 302;
+        response->body.type = STRING_RESPONSE;
+
+        String redirect_link = string_new("");
+        string_append_string(&redirect_link, &req->path);
+
+        if (full_path.ptr[full_path.length-1] != '/') {
+            string_append_char(&redirect_link, '/');
+        }
+
+        string_append(&redirect_link, "index.html");
+
+        printf("Redirect link: ");
+        string_print(&redirect_link);
+        printf("\n");
+
+        String body = string_new("Please follow <a src='");
+        string_append_string(&body, &redirect_link);
+        string_append(&body, "'>this link</a>");
+
+        header_list_append(&response->header_list, header_create("Location", redirect_link.ptr));
+
+        response->body.value.string = body;
+        return;
+    }
+
+    const char* mime_type = mime_type_for_file(&request_path);
+    header_list_append(&response->header_list, header_create("Content-Type", mime_type));
+    response->body.type = FILE_RESPONSE;
+    response->body.value.file = file;
 }
 
 int server_init(Server *server, u32 addr, u16 port) {
@@ -53,16 +91,15 @@ int server_init(Server *server, u32 addr, u16 port) {
     server->socket_fd = sfd;
     server->status = Setup;
     Router r = router_new();
-    router_add_route(&r, "/", &serve_static_files);
+    router_add_route(&r, "/", &default_static_files_route);
 
     server->router = r;
 
     return 0;
 }
 
-char *mime_type_for_file(const char *path) {
-    StringView sv = stringview_create(path);
-    SV_SPLIT(&sv, '.', route, ext);
+char *mime_type_for_file(const StringView *sv) {
+    SV_SPLIT(sv, '.', route, ext);
 
     if (stringview_compare_str(&ext, "html")) {
         return "text/html";
@@ -70,9 +107,12 @@ char *mime_type_for_file(const char *path) {
         return "image/x-png";
     } else if (stringview_compare_str(&ext, "ico")) {
         return "image/x-icon";
+    } else if (stringview_compare_str(&ext, "svg")) {
+        return "image/svg+xml";
     } else if (stringview_compare_str(&ext, "css")) {
         return "text/css";
     }
+
     return "unknown";
 }
 

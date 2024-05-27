@@ -1,5 +1,6 @@
 #include "string_stuff.h"
 #include "core.h"
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -20,13 +21,13 @@ StringView stringview_create_with_length(const char *str, usize len) {
     return sv;
 }
 
-void stringview_print(StringView *sv) {
+void stringview_print(const StringView *sv) {
     for(usize i = 0; i < sv->length; i++) {
         putc(sv->ptr[i], stdout);
     }
 }
 
-void stringview_debug_print(StringView *sv) {
+void stringview_debug_print(const StringView *sv) {
     for(usize i = 0; i < sv->length; i++) {
         char c = sv->ptr[i];
         switch (c) {
@@ -46,13 +47,13 @@ void stringview_debug_print(StringView *sv) {
     }
 }
 
-char stringview_char_at(StringView *sv, usize pos) {
+char stringview_char_at(const StringView *sv, usize pos) {
     if (pos > sv->length) { return '\0'; }
 
     return sv->ptr[pos];
 }
 
-void stringview_split(StringView *sv, char c, StringView *lhs, StringView *rhs) {
+void stringview_split(const StringView *sv, char c, StringView *lhs, StringView *rhs) {
     usize found_position = 0;
 
     while(found_position < sv->length && stringview_char_at(sv, found_position) != c) {
@@ -71,7 +72,7 @@ void stringview_split(StringView *sv, char c, StringView *lhs, StringView *rhs) 
     }
 }
 
-void stringview_split_str(StringView *sv, char *separator, StringView *lhs, StringView *rhs) {
+void stringview_split_str(const StringView *sv, char *separator, StringView *lhs, StringView *rhs) {
     usize sep_len = strlen(separator);
 
     if (sv->length == 0) {
@@ -192,6 +193,10 @@ void string_destroy(String *sb) {
     sb->capacity = sb->length = 0;
 }
 
+void string_enforce_terminator(String *str) {
+    str->ptr[str->length] = '\0';
+}
+
 int string_grow_to_length(String *sb, usize new_length) {
     if (new_length < sb->capacity) return 0;
 
@@ -200,8 +205,7 @@ int string_grow_to_length(String *sb, usize new_length) {
         new_capacity = new_capacity * 2;
     } while(new_capacity <= new_length);
 
-    char *new_ptr = calloc(new_capacity, sizeof(char));
-    memcpy(new_ptr, sb->ptr, sb->length);
+    char *new_ptr = realloc(sb->ptr, new_capacity * sizeof(char));
 
     if (new_ptr == nullptr) {
         return -1;
@@ -209,6 +213,8 @@ int string_grow_to_length(String *sb, usize new_length) {
 
     sb->capacity = new_capacity;
     sb->ptr = new_ptr;
+
+    string_enforce_terminator(sb);
 
     return 0;
 }
@@ -224,6 +230,8 @@ int string_append_char(String *sb, char c) {
     *(sb->ptr + sb->length) = c;
 
     sb->length = new_length;
+
+    string_enforce_terminator(sb);
 
     return 0;
 }
@@ -241,6 +249,7 @@ int string_append(String *sb, const char* str) {
     memcpy(append_start, str, added_len);
 
     sb->length = new_length;
+    string_enforce_terminator(sb);
 
     return 0;
 }
@@ -258,6 +267,7 @@ int string_append_string(String *sb, String *added) {
     memcpy(append_start, added->ptr, added_len);
 
     sb->length = new_length;
+    string_enforce_terminator(sb);
 
     return 0;
 }
@@ -268,7 +278,7 @@ int string_append_sv(String *st, const StringView *sv) {
     usize added_len = sv->length;
     usize new_length = st->length + added_len;
 
-    usize gr = string_grow_to_length(st, new_length);
+    int gr = string_grow_to_length(st, new_length);
     if (gr < 0) {
         return gr;
     }
@@ -278,6 +288,7 @@ int string_append_sv(String *st, const StringView *sv) {
     memcpy(append_start, sv->ptr, added_len);
 
     st->length = new_length;
+    string_enforce_terminator(st);
 
     return 0;
 }
