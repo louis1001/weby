@@ -1,6 +1,6 @@
 OUTPUT_DIR = build
 SRC_FILES = $(wildcard src/*.c)
-CLANG_OPTS = -Wimplicit-fallthrough -pedantic-errors -Werror -Wall -Wextra
+CLANG_OPTS = -g -O0 -Wimplicit-fallthrough -pedantic-errors -Werror -Wall -Wextra
 INCLUDE_DIR = -I./include/
 
 all: webser

@@ -37,6 +37,7 @@ typedef struct {
     int client_fd;
     HttpMethod method;
     String path;
+    String uri_fragment;
     String query;
     HttpVersion version;
 } Request;

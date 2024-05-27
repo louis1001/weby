@@ -12,8 +12,6 @@
 
 const int PORT = 8001;
 
-const Server server = {0};
-
 void index_route(Request *request, Response *response) {
     (void)request;
 
@@ -89,14 +87,14 @@ int main(void) {
 
     server_init(&server, 0x0, PORT);
 
-    // Router router = router_new();
+     Router router = router_new();
 
-    // router_add_route(&router, "/static", &static_assets_route);
-    // router_add_exact_route(&router, "/favicon.ico", &favicon_route);
-    // router_add_exact_route(&router, "/", &index_route);
-    // router_add_route(&router, "/", &not_found_route);
+     router_add_route(&router, "/static", &static_assets_route);
+     router_add_exact_route(&router, "/favicon.ico", &favicon_route);
+     router_add_exact_route(&router, "/", &index_route);
+     router_add_route(&router, "/", &not_found_route);
 
-    // server_set_router(&server, router);
+     server_set_router(&server, router);
 
     server_start(&server);
 
