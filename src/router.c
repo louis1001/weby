@@ -109,7 +109,7 @@ void router_handle_request(
             case RouteMatchType_Function: {
                 RouteMatcherFn fn = route->match.content.fn;
 
-                matches = fn(&request->path_components);
+                matches = fn(&request->path_components, &request->dynamic_data);
                 break;
             }
         }

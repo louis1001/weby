@@ -1,6 +1,7 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 #include "string_stuff.h"
+#include "slow_dict.h"
 
 #define HTTP_METHODS\
     X(UNKNOWN_METHOD) \
@@ -41,6 +42,7 @@ typedef struct {
     String query;
     StringViewList path_components;
     HttpVersion version;
+    SlowDict dynamic_data;
 } Request;
 
 typedef struct {

@@ -8,7 +8,7 @@
 #include "dynamic_array.h"
 
 typedef void (*RequestHandlerFn)(Request *, Response*);
-typedef bool (*RouteMatcherFn)(const StringViewList*);
+typedef bool (*RouteMatcherFn)(const StringViewList*, SlowDict *);
 
 typedef enum {
     RouteMatchType_Exact,

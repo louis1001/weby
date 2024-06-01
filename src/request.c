@@ -111,6 +111,7 @@ int request_builder_parse(RequestBuilder *rb) {
     rb->request.path = final_path;
     rb->request.path_components = path_components;
     rb->request.version = http_version;
+    slow_dict_init(&rb->request.dynamic_data);
 
     return 0;
 }
@@ -120,4 +121,5 @@ void request_destroy(Request *req) {
     string_destroy(&req->query);
     stringview_list_destroy(&req->path_components);
     string_destroy(&req->uri_fragment);
+    slow_dict_destroy(&req->dynamic_data);
 }

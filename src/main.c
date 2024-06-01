@@ -4,6 +4,7 @@
 #include "request.h"
 #include "box.h"
 #include "router.h"
+#include "slow_dict.h"
 #define WITH_IMPL
 #include "core.h"
 #undef WITH_IMPL
@@ -71,7 +72,7 @@ void favicon_route(Request *request, Response *response) {
     }
 }
 
-bool user_id_route_matcher(const StringViewList *path_components) {
+bool user_id_route_matcher(const StringViewList *path_components, SlowDict *dyn) {
     if (path_components->length != 2) { return false; }
 
     if (stringview_compare_str(&path_components->data[0], "users")) {
@@ -83,6 +84,11 @@ bool user_id_route_matcher(const StringViewList *path_components) {
             if (c >= '0' && c <= '9') { continue; }
             is_digit = false;
             break;
+        }
+
+        if (is_digit) {
+            String value = stringview_to_string(sv);
+            slow_dict_insert(dyn, string_new("id"), value);
         }
 
         return is_digit;
@@ -108,8 +114,13 @@ void user_id_route(Request *request, Response *response) {
     html_builder_open_node(&hb);
 
     html_builder_add_text(&hb, "Page for user: ");
-    String id = stringview_to_string(&request->path_components.data[1]);
-    html_builder_add_text(&hb, id.ptr);
+
+    String *id = slow_dict_get(&request->dynamic_data, "id");
+    if (id) {
+        html_builder_add_text(&hb, id->ptr);
+    } else {
+        html_builder_add_text(&hb, "No User");
+    }
 
     html_builder_close_node(&hb, "h1");
 
