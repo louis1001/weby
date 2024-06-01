@@ -51,8 +51,7 @@ if (new_length < list->capacity) return 0;\
         new_capacity = new_capacity * 2;\
     } while(new_capacity <= new_length);\
 \
-    element *new_ptr = calloc(new_capacity, sizeof(element));\
-    memcpy(new_ptr, list->data, list->length * sizeof(element));\
+    element *new_ptr = realloc(list->data, new_capacity * sizeof(element));\
 \
     if (new_ptr == nullptr) {\
         return -1;\

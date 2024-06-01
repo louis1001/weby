@@ -7,6 +7,11 @@
 #define min(a, b) (a <= b ? a : b)
 #define max(a, b) (a >= b ? a : b)
 
+IMPL_LIST_TYPE(String, string)
+
+void stringview_destroy(StringView *sv) { (void) sv; }
+IMPL_LIST_TYPE(StringView, stringview)
+
 StringView stringview_create(const char *str) {
     usize len = strlen(str);
 
@@ -129,7 +134,7 @@ bool stringview_has_prefix(StringView *sv, StringView *prefix) {
 void stringview_triml(StringView *sv, usize count) {
     usize chars_removed = count;
     if (sv->length < count) {
-        chars_removed = count;
+        chars_removed = sv->length;
     }
 
     sv->ptr = sv->ptr + chars_removed;
@@ -139,10 +144,29 @@ void stringview_triml(StringView *sv, usize count) {
 void stringview_trimr(StringView *sv, usize count) {
     usize chars_removed = count;
     if (sv->length < count) {
-        chars_removed = count;
+        chars_removed = sv->length;
     }
 
     sv->length = sv->length - chars_removed;
+}
+
+void stringview_list_unsafe_remove_first(StringViewList *list) {
+    usize new_length = list->length - 1;
+
+    usize byte_count = list->capacity * sizeof(StringView);
+    StringView *result = malloc(byte_count);
+    memset(result, 0, byte_count);
+
+    StringView *old_ptr = list->data;
+
+    if (new_length > 0) {
+        memcpy(result, old_ptr + 1, new_length * sizeof(StringView));
+    }
+
+    list->data = result;
+    free(old_ptr);
+
+    list->length = new_length;
 }
 
 String stringview_to_string(const StringView *sv) {
@@ -222,7 +246,7 @@ int string_grow_to_length(String *sb, usize new_length) {
 int string_append_char(String *sb, char c) {
     usize new_length = sb->length + 1;
 
-    usize gr = string_grow_to_length(sb, new_length);
+    int gr = string_grow_to_length(sb, new_length);
     if (gr < 0) {
         return gr;
     }
@@ -239,7 +263,7 @@ int string_append_char(String *sb, char c) {
 int string_append(String *sb, const char* str) {
     usize added_len = strlen(str);
     usize new_length = sb->length + added_len;
-    usize gr = string_grow_to_length(sb, new_length);
+    int gr = string_grow_to_length(sb, new_length);
     if (gr < 0) {
         return gr;
     }
@@ -257,7 +281,7 @@ int string_append(String *sb, const char* str) {
 int string_append_string(String *sb, String *added) {
     usize added_len = added->length;
     usize new_length = sb->length + added_len;
-    usize gr = string_grow_to_length(sb, new_length);
+    int gr = string_grow_to_length(sb, new_length);
     if (gr < 0) {
         return gr;
     }
@@ -297,4 +321,56 @@ StringView string_make_view(const String *sb) {
     StringView sv = {.length = sb->length, .ptr = sb->ptr };
 
     return sv;
+}
+
+StringView string_substring(const String *str, usize start, usize end) {
+    ASSERT(start <= end, "Substring must have valid bounds");
+    StringView sv = string_make_view(str);
+
+    stringview_triml(&sv, start);
+
+    usize length = end - start;
+
+    if (sv.length > length) {
+        stringview_trimr(&sv, sv.length - length);
+    }
+
+    return sv;
+}
+
+StringViewList string_split_all(const String *str, const char *separator) {
+    StringViewList elements = {0};
+    stringview_list_init(&elements);
+
+    usize sep_len = strlen(separator);
+
+    if (str->length == 0) {
+        return elements;
+    }
+
+    usize start = 0;
+    usize end = 0;
+
+    while (end < str->length) {
+        bool found = false;
+        for (; end <= str->length - sep_len; end++) {
+            if (strncmp(separator, str->ptr + end, sep_len) == 0) {
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            StringView sv = string_substring(str, start, end);
+            stringview_list_append(&elements, sv);
+            end += sep_len;
+            start = end;
+        } else {
+            StringView sv = string_substring(str, start, str->length);
+            stringview_list_append(&elements, sv);
+            break;
+        }
+    }
+
+    return elements;
 }

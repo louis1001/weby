@@ -6,8 +6,22 @@
 
 IMPL_LIST_TYPE(RoutePair, route_pair)
 
+void route_match_destroy(RouteMatch *rm) {
+    switch(rm->type) {
+        case RouteMatchType_Exact:
+            string_destroy(&rm->content.exact);
+            break;
+        case RouteMatchType_Prefix:
+            string_destroy(&rm->content.prefix);
+            break;
+        case RouteMatchType_Function:
+            // Has to be a global function anyway.
+            break;
+    }
+}
+
 void route_pair_destroy(RoutePair *rp) {
-    string_destroy(&rp->path);
+    route_match_destroy(&rp->match);
 }
 
 Router router_new(void) {
@@ -23,9 +37,14 @@ void router_destroy(Router *router) {
 }
 
 void router_add_route(Router* router, const char *path, RequestHandlerFn handler) {
+    RouteMatch rm = {
+        .type = RouteMatchType_Prefix,
+        .content = {.prefix = string_new(path) }
+    };
+
     RoutePair rp = {
-        .path = string_new(path),
-        .exact = false,
+        .match = rm,
+        .method = GET,
         .handler = handler
     };
 
@@ -33,9 +52,29 @@ void router_add_route(Router* router, const char *path, RequestHandlerFn handler
 }
 
 void router_add_exact_route(Router* router, const char *path, RequestHandlerFn handler) {
+    RouteMatch rm = {
+        .type = RouteMatchType_Exact,
+        .content = { .exact = string_new(path) }
+    };
+
     RoutePair rp = {
-        .path = string_new(path),
-        .exact = true,
+        .match = rm,
+        .method = GET,
+        .handler = handler
+    };
+
+    route_pair_list_append(&router->routes, rp);
+}
+
+void router_add_matched_route(Router *router, RouteMatcherFn fn, RequestHandlerFn handler) {
+    RouteMatch rm = {
+        .type = RouteMatchType_Function,
+        .content = { .fn = fn }
+    };
+
+    RoutePair rp = {
+        .match = rm,
+        .method = GET,
         .handler = handler
     };
 
@@ -47,17 +86,32 @@ void router_handle_request(
     Request *request,
     Response *response
 ) {
+    StringView request_path = string_make_view(&request->path);
+
     for(usize i = 0; i < router->routes.length; i++) {
         RoutePair *route = &router->routes.data[i];
 
-        StringView route_path = string_make_view(&route->path);
-
         bool matches = false;
-        if (route->exact) {
-            matches = stringview_compare_str(&route_path, request->path.ptr);
-        } else {
-            StringView request_path = string_make_view(&request->path);
-            matches = stringview_has_prefix(&request_path, &route_path);
+
+        switch (route->match.type) {
+            case RouteMatchType_Exact: {
+                StringView route_path = string_make_view(&route->match.content.exact);
+
+                matches = stringview_compare_str(&route_path, request->path.ptr);
+                break;
+            }
+            case RouteMatchType_Prefix: {
+                StringView route_path = string_make_view(&route->match.content.prefix);
+
+                matches = stringview_has_prefix(&request_path, &route_path);
+                break;
+            }
+            case RouteMatchType_Function: {
+                RouteMatcherFn fn = route->match.content.fn;
+
+                matches = fn(&request->path_components);
+                break;
+            }
         }
 
         if (!matches) { continue; }

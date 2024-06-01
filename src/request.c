@@ -101,10 +101,15 @@ int request_builder_parse(RequestBuilder *rb) {
 
     SV_SPLIT(&request_path, '#', actual_path, uri_fragment);
 
+    String final_path = stringview_to_string(&actual_path);
+    StringViewList path_components = string_split_all(&final_path, "/");
+    stringview_list_unsafe_remove_first(&path_components);
+
     rb->request.method = method;
     rb->request.query = stringview_to_string(&query_parameters);
     rb->request.uri_fragment = stringview_to_string(&uri_fragment);
-    rb->request.path = stringview_to_string(&path);
+    rb->request.path = final_path;
+    rb->request.path_components = path_components;
     rb->request.version = http_version;
 
     return 0;
@@ -113,5 +118,6 @@ int request_builder_parse(RequestBuilder *rb) {
 void request_destroy(Request *req) {
     string_destroy(&req->path);
     string_destroy(&req->query);
+    stringview_list_destroy(&req->path_components);
     string_destroy(&req->uri_fragment);
 }

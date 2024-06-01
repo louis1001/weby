@@ -39,6 +39,7 @@ typedef struct {
     String path;
     String uri_fragment;
     String query;
+    StringViewList path_components;
     HttpVersion version;
 } Request;
 

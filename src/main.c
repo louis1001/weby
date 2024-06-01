@@ -71,6 +71,56 @@ void favicon_route(Request *request, Response *response) {
     }
 }
 
+bool user_id_route_matcher(const StringViewList *path_components) {
+    if (path_components->length != 2) { return false; }
+
+    if (stringview_compare_str(&path_components->data[0], "users")) {
+        StringView *sv = &path_components->data[1];
+
+        bool is_digit = true;
+        for (usize i = 0; i < sv->length; i++) {
+            char c = sv->ptr[i];
+            if (c >= '0' && c <= '9') { continue; }
+            is_digit = false;
+            break;
+        }
+
+        return is_digit;
+    }
+    return false;
+}
+
+void user_id_route(Request *request, Response *response) {
+    (void) request;
+    (void) response;
+
+    response->status_code = 200;
+    response->version = HTTP1_0;
+    response->body.type = STRING_RESPONSE;
+    HtmlBuilder hb = html_builder_new();
+    html_builder_make_node(&hb, "html");
+    html_builder_open_node(&hb);
+
+    html_builder_make_node(&hb, "body");
+    html_builder_open_node(&hb);
+
+    html_builder_make_node(&hb, "h1");
+    html_builder_open_node(&hb);
+
+    html_builder_add_text(&hb, "Page for user: ");
+    String id = stringview_to_string(&request->path_components.data[1]);
+    html_builder_add_text(&hb, id.ptr);
+
+    html_builder_close_node(&hb, "h1");
+
+    html_builder_close_node(&hb, "body");
+
+    html_builder_close_node(&hb, "html");
+    response->body.value.string = hb.html_string;
+
+    header_list_append(&response->header_list, header_create("Content-Type", "text/html"));
+}
+
 void not_found_route(Request *request, Response *response) {
     (void)request;
 
@@ -87,17 +137,19 @@ int main(void) {
 
     server_init(&server, 0x0, PORT);
 
-     Router router = router_new();
+    Router router = router_new();
 
-     router_add_route(&router, "/static", &static_assets_route);
-     router_add_exact_route(&router, "/favicon.ico", &favicon_route);
-     router_add_exact_route(&router, "/", &index_route);
-     router_add_route(&router, "/", &not_found_route);
+    router_add_route(&router, "/static", &static_assets_route);
+    router_add_exact_route(&router, "/favicon.ico", &favicon_route);
+    router_add_matched_route(&router, &user_id_route_matcher, &user_id_route);
+    router_add_exact_route(&router, "/", &index_route);
+    router_add_route(&router, "/", &not_found_route);
 
-     server_set_router(&server, router);
+    server_set_router(&server, router);
 
     server_start(&server);
 
     server_destroy(&server);
+
     return 0;
 }
