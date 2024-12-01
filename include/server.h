@@ -7,6 +7,8 @@
 #include "response.h"
 #include "router.h"
 
+#define MAXCON 10000
+
 typedef struct sockaddr_in socket_addr;
 
 typedef enum {
@@ -21,6 +23,7 @@ typedef struct {
     socket_addr addr;
     ServerStatus status;
     Router router;
+    int client_fds[MAXCON];
 } Server;
 
 int server_send_file(Server*, Request*, FILE*);

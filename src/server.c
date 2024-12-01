@@ -186,7 +186,49 @@ void request_debug_print(Request *req) {
     printf("\n\n");
 }
 
+void server_handle_request(Server *server, int slot) {
+    int client_fd = server->client_fds[slot];
+    debugf("Accepted connection from client (fd: %d)", client_fd);
+
+    char *buffer = (char *) calloc(BUFFER_SIZE, sizeof(char));
+
+    ssize_t bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0);
+
+    debugf("Received %zu", bytes_received);
+
+    if (bytes_received <= 0) {
+        shutdown(client_fd, SHUT_RDWR);
+        close(client_fd);
+        free(buffer);
+        return; // TODO: Handle early return in fork
+    }
+
+    RequestBuilder rb = request_builder_create(buffer, client_fd);
+    int result = request_builder_parse(&rb);
+    if (result < 0) {
+        fprintf(stderr, "Error parsing request\n");
+    }
+
+    request_debug_print(&rb.request);
+
+    Response res = response_create();
+    router_handle_request(&server->router, &rb.request, &res);
+
+    server_send_response(server, &rb.request, &res);
+
+    response_destroy(&res);
+
+    request_builder_destroy(&rb);
+    free(buffer);
+    shutdown(client_fd, SHUT_RDWR);
+    close(client_fd);
+
+    server->client_fds[slot] = -1;
+}
+
 int server_start(Server *server) {
+    fflush(stdout);
+
     int bind_result = bind(server->socket_fd, (struct sockaddr*) &server->addr, sizeof(server->addr));
     if (bind_result < 0) {
         show_error("Error binding", errno);
@@ -204,52 +246,24 @@ int server_start(Server *server) {
 
     printf("Listening on `http://0.0.0.0:8001`\n");
 
+    signal(SIGCHLD, SIG_IGN);
+
+    int slot = 0;
+
     loop {
         socket_addr client_addr;
         socklen_t client_addr_len = sizeof(client_addr);
 
-        int client_fd;
-
-        client_fd = accept(server->socket_fd, (struct sockaddr*)&client_addr, &client_addr_len);
-        if (client_fd < 0) {
+        server->client_fds[slot] = accept(server->socket_fd, (struct sockaddr*)&client_addr, &client_addr_len);
+        if (server->client_fds[slot] < 0) {
             show_error("Error accepting connection", errno);
             continue;
         }
 
-        debugf("Accepted connection from client (fd: %d)", client_fd);
+        int current_slot = slot;
+        slot = (slot + 1) % MAXCON;
 
-        char *buffer = (char *) calloc(BUFFER_SIZE, sizeof(char));
-
-        ssize_t bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0);
-
-        debugf("Received %zu", bytes_received);
-
-        if (bytes_received <= 0) {
-            close(client_fd);
-            free(buffer);
-            continue;
-        }
-
-        RequestBuilder rb = request_builder_create(buffer, client_fd);
-        int result = request_builder_parse(&rb);
-        if (result < 0) {
-            fprintf(stderr, "Error parsing request\n");
-        }
-
-        request_debug_print(&rb.request);
-
-        Response res = response_create();
-        router_handle_request(&server->router, &rb.request, &res);
-
-        server_send_response(server, &rb.request, &res);
-
-        printf("Response sent\n");
-
-        response_destroy(&res);
-
-        request_builder_destroy(&rb);
-        free(buffer);
-        close(client_fd);
+        server_handle_request(server, current_slot);
 
         // pthread_t thread_id;
         // pthread_create(&thread_id, NULL, handle_client, (void*) client_fd);

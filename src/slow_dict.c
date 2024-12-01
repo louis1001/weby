@@ -1,5 +1,6 @@
 #include "slow_dict.h"
 #include "string.h"
+#include "string_stuff.h"
 
 IMPL_LIST_TYPE(SlowDictPair, slow_dict_pair)
 
