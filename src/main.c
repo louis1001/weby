@@ -115,7 +115,7 @@ void user_id_route(Request *request, Response *response) {
 
     html_builder_add_text(&hb, "Page for user: ");
 
-    String *id = slow_dict_get(&request->dynamic_data, "id");
+    const String *id = slow_dict_get(&request->dynamic_data, "id");
     if (id) {
         html_builder_add_text(&hb, id->ptr);
     } else {

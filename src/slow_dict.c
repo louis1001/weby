@@ -16,16 +16,37 @@ void slow_dict_init(SlowDict *dict) {
 void slow_dict_insert(SlowDict *dict, String key, String value) {
     SlowDictPair pair = {.key = key, .value = value};
 
+    SlowDictPair *existing = slow_dict_find(dict, key.ptr);
+    if (existing != nullptr) {
+        string_destroy(&existing->value);
+        existing->value = value;
+
+        return;
+    }
+
     slow_dict_pair_list_append(&dict->pairs, pair);
 }
 
-String* slow_dict_get(SlowDict *dict, const char *str) {
+const String* slow_dict_get(SlowDict *dict, const char *str) {
     for(usize i = 0; i < dict->pairs.length; i++) {
         SlowDictPair *pair = &dict->pairs.data[i];
         String *key = &pair->key;
 
         if(string_compare_str(key, str)) {
             return &pair->value;
+        }
+    }
+
+    return nullptr;
+}
+
+SlowDictPair* slow_dict_find(SlowDict *dict, const char *str) {
+    for(usize i = 0; i < dict->pairs.length; i++) {
+        SlowDictPair *pair = &dict->pairs.data[i];
+        String *key = &pair->key;
+
+        if(string_compare_str(key, str)) {
+            return pair;
         }
     }
 

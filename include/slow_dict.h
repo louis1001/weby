@@ -19,7 +19,8 @@ void slow_dict_pair_destroy(SlowDictPair *);
 
 void slow_dict_init(SlowDict *);
 void slow_dict_insert(SlowDict *, String, String);
-String* slow_dict_get(SlowDict *, const char*);
+const String* slow_dict_get(SlowDict *, const char*);
+SlowDictPair* slow_dict_find(SlowDict *, const char*);
 void slow_dict_destroy(SlowDict *);
 
 #endif
