@@ -102,22 +102,29 @@ int server_init(Server *server, u32 addr, u16 port) {
     return 0;
 }
 
-char *mime_type_for_file(const StringView *sv) {
-    SV_SPLIT(sv, '.', route, ext);
-
-    if (stringview_compare_str(&ext, "html")) {
-        return "text/html";
-    } else if (stringview_compare_str(&ext, "png")) {
-        return "image/x-png";
-    } else if (stringview_compare_str(&ext, "ico")) {
-        return "image/x-icon";
-    } else if (stringview_compare_str(&ext, "svg")) {
-        return "image/svg+xml";
-    } else if (stringview_compare_str(&ext, "css")) {
-        return "text/css";
+StringView extension_for_file_path(const StringView *sv) {
+    usize position = 0;
+    if (stringview_find_last_occurrence(sv, '.', &position) == -1) {
+        return stringview_create("");
     }
 
-    return "unknown";
+    StringView result = stringview_create_with_length(sv->ptr, sv->length);
+    stringview_triml(&result, position + 1);
+
+    return result;
+}
+
+char *mime_type_for_file(const StringView *sv) {
+    StringView ext = extension_for_file_path(sv);
+
+    SV_SWITCH_START();
+    SV_SWITCH_CASE("html", return "text/html");
+    SV_SWITCH_CASE("png", return "image/x-png");
+    SV_SWITCH_CASE("ico", return "image/x-icon");
+    SV_SWITCH_CASE("svg", return "image/svg+xml");
+    SV_SWITCH_CASE("css", return "text/css");
+    SV_SWITCH_CASE("js", return "application/javascript");
+    SV_SWITCH_END(return "unknown");
 }
 
 int server_send_file(Server *server, Request *req, FILE *file) {
@@ -204,7 +211,7 @@ void server_handle_request(Server *server, int slot) {
         shutdown(client_fd, SHUT_RDWR);
         close(client_fd);
         free(buffer);
-        return; // TODO: Handle early return in fork
+        return;
     }
 
     RequestBuilder rb = request_builder_create(buffer, client_fd);

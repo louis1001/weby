@@ -52,6 +52,28 @@ void stringview_debug_print(const StringView *sv) {
     }
 }
 
+int stringview_find_first_occurrence(const StringView *sv, char c, usize *pos) {
+    for(usize i = 0; i < sv->length; i++) {
+        if (sv->ptr[i] == c) {
+            *pos = i;
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+int stringview_find_last_occurrence(const StringView *sv, char c, usize *pos) {
+    for(usize i = sv->length; i > 0; i--) {
+        if (sv->ptr[i] == c) {
+            *pos = i;
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
 char stringview_char_at(const StringView *sv, usize pos) {
     if (pos > sv->length) { return '\0'; }
 

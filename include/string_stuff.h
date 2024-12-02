@@ -21,6 +21,8 @@ StringView stringview_create(const char *);
 StringView stringview_create_with_length(const char *, usize);
 void stringview_print(const StringView *sv);
 void stringview_debug_print(const StringView *sv);
+int stringview_find_first_occurrence(const StringView *, char, usize *);
+int stringview_find_last_occurrence(const StringView *, char, usize *);
 char stringview_char_at(const StringView *sv, usize pos);
 void stringview_split(const StringView *sv, char, StringView *lhs, StringView *rhs);
 void stringview_split_str(const StringView *, char *, StringView *lhs, StringView *rhs);
@@ -35,6 +37,10 @@ bool stringview_has_prefix(StringView *, StringView *);
 #define SV_SPLIT_STR(sv, separator, lhs_name, rhs_name) StringView lhs_name = {0};\
     StringView rhs_name = {0};\
     stringview_split_str(sv, separator, &lhs_name, &rhs_name)
+
+#define SV_SWITCH_START() if (false) { do {} while(0)
+#define SV_SWITCH_CASE(X, TYPE) } else if (stringview_compare_str(&ext, X)) { TYPE
+#define SV_SWITCH_END(ELSE_CASE) } do { ELSE_CASE; } while(0)
 
 String stringview_to_string(const StringView *sv);
 void stringview_triml(StringView *sv, usize);
