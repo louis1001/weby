@@ -2,7 +2,6 @@
 #include "server.h"
 #include "string_stuff.h"
 #include "request.h"
-#include "box.h"
 #include "router.h"
 #include "slow_dict.h"
 #define WITH_IMPL

@@ -24,6 +24,7 @@
 #define GUARD(cond, otherwise) if(!(cond)) { otherwise }
 
 #define loop while(1)
+#define foreach(counter, min_value, max_value) for(int counter = min_value; counter < max_value; counter++)
 
 #define debugf(msg, ...) printf("DEBUG: " msg "\n", __VA_ARGS__)
 #define debug(msg) printf("DEBUG: " msg "\n")

@@ -95,6 +95,10 @@ int server_init(Server *server, u32 addr, u16 port) {
 
     server->router = r;
 
+    foreach(i, 0, MAXCON) {
+        server->client_fds[i] = -1;
+    }
+
     return 0;
 }
 
@@ -238,7 +242,8 @@ int server_start(Server *server) {
         return FAILURE_STATUS;
     }
 
-    if (listen(server->socket_fd, 10) < 0) {
+    int listenfd = listen(server->socket_fd, 10);
+    if (listenfd < 0) {
         show_error("Error listening", errno);
         close(server->socket_fd);
         return FAILURE_STATUS;
@@ -260,14 +265,16 @@ int server_start(Server *server) {
             continue;
         }
 
-        int current_slot = slot;
-        slot = (slot + 1) % MAXCON;
+        if (fork() == 0) {
+           	close(listenfd);
+           	server_handle_request(server, slot);
+           	exit(0);
+        } else {
+           	close(server->client_fds[slot]);
+        }
 
-        server_handle_request(server, current_slot);
-
-        // pthread_t thread_id;
-        // pthread_create(&thread_id, NULL, handle_client, (void*) client_fd);
-        // pthread_detach(thread_id);
+        while (server->client_fds[slot] != -1)
+            slot = (slot+1)%MAXCON;
     }
 }
 
